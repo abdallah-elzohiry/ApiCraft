@@ -1,11 +1,23 @@
+import { HttpError } from "./http-error.js";
+
+import { BaseHttpClient } from "./base-http-client.js";
+
 import type {
-    HttpClient,
+    HttpInterceptor,
     HttpRequest,
     HttpResponse
 } from "./http-client.js";
 
-export class FetchHttpClient implements HttpClient {
-    async request<T>(
+export class FetchHttpClient
+    extends BaseHttpClient {
+
+    constructor(
+        interceptors: HttpInterceptor[] = []
+    ) {
+        super(interceptors);
+    }
+
+    protected async execute<T>(
         request: HttpRequest
     ): Promise<HttpResponse<T>> {
         const url = this.buildUrl(
@@ -17,7 +29,6 @@ export class FetchHttpClient implements HttpClient {
             method: request.method,
 
             headers: {
-                "Content-Type": "application/json",
                 ...request.headers
             },
 
@@ -32,19 +43,33 @@ export class FetchHttpClient implements HttpClient {
 
         let data: unknown;
 
-        if (contentType?.includes("application/json")) {
+        if (
+            contentType?.includes(
+                "application/json"
+            )
+        ) {
             data = await response.json();
         } else {
             data = await response.text();
         }
 
+        const headers =
+            Object.fromEntries(
+                response.headers.entries()
+            );
+
+        if (!response.ok) {
+            throw new HttpError(
+                `HTTP request failed with status ${response.status}`,
+                response.status,
+                data,
+                headers
+            );
+        }
+
         return {
             status: response.status,
-
-            headers: Object.fromEntries(
-                response.headers.entries()
-            ),
-
+            headers,
             data: data as T
         };
     }
@@ -60,14 +85,15 @@ export class FetchHttpClient implements HttpClient {
             return url;
         }
 
-        const searchParams =
+        const params =
             new URLSearchParams();
 
-        for (const [key, value] of Object.entries(
-            query
-        )) {
+        for (
+            const [key, value]
+            of Object.entries(query)
+        ) {
             if (value !== undefined) {
-                searchParams.append(
+                params.append(
                     key,
                     String(value)
                 );
@@ -75,12 +101,10 @@ export class FetchHttpClient implements HttpClient {
         }
 
         const queryString =
-            searchParams.toString();
+            params.toString();
 
-        if (!queryString) {
-            return url;
-        }
-
-        return `${url}?${queryString}`;
+        return queryString
+            ? `${url}?${queryString}`
+            : url;
     }
 }
