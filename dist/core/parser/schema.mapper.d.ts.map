@@ -1,0 +1,1 @@
+{"version":3,"file":"schema.mapper.d.ts","sourceRoot":"","sources":["../../../src/core/parser/schema.mapper.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,eAAe,CAAC;AAE/C,OAAO,KAAK,EACR,WAAW,EAEd,MAAM,2BAA2B,CAAC;AAEnC,qBAAa,YAAY;IACrB,GAAG,CACC,IAAI,EAAE,MAAM,EACZ,MAAM,EAAE,SAAS,CAAC,YAAY,GAC/B,WAAW,CAqBb;IAED,OAAO,CAAC,OAAO;IAuBf,OAAO,CAAC,cAAc;CAUzB"}

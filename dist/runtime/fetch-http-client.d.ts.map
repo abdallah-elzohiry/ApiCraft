@@ -1,0 +1,1 @@
+{"version":3,"file":"fetch-http-client.d.ts","sourceRoot":"","sources":["../../src/runtime/fetch-http-client.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EACR,UAAU,EACV,WAAW,EACX,YAAY,EACf,MAAM,kBAAkB,CAAC;AAE1B,qBAAa,eAAgB,YAAW,UAAU;IACxC,OAAO,CAAC,CAAC,EACX,OAAO,EAAE,WAAW,GACrB,OAAO,CAAC,YAAY,CAAC,CAAC,CAAC,CAAC,CAwC1B;IAED,OAAO,CAAC,QAAQ;CAkCnB"}

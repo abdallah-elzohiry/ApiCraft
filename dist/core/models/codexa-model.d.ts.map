@@ -1,0 +1,1 @@
+{"version":3,"file":"codexa-model.d.ts","sourceRoot":"","sources":["../../../src/core/models/codexa-model.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,WAAW;IAC1B,IAAI,EAAE,MAAM,CAAC;IACb,UAAU,EAAE,cAAc,EAAE,CAAC;CAC9B;AAED,MAAM,WAAW,cAAc;IAC7B,IAAI,EAAE,MAAM,CAAC;IACb,IAAI,EAAE,MAAM,CAAC;IACb,QAAQ,EAAE,OAAO,CAAC;CACnB"}

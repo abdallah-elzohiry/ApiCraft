@@ -1,0 +1,33 @@
+{
+  "name": "codexa",
+  "version": "0.1.0",
+  "description": "Code generation toolkit for OpenAPI-based APIs",
+  "type": "module",
+  "bin": {
+    "codexa": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts"
+  },
+  "keywords": [
+    "openapi",
+    "swagger",
+    "code-generator",
+    "typescript",
+    "angular",
+    "api-client"
+  ],
+  "author": "CodeXA",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "commander": "^15.0.0",
+    "openapi-types": "^12.1.3"
+  }
+}
