@@ -101,6 +101,9 @@ export class TypeScriptTypeRenderer {
                         this.render(type)
                     )
                     .join(" & ");
+            case "void":
+                return "void";
+
             default:
                 return "unknown";
         }
@@ -180,6 +183,10 @@ export class TypeScriptTypeRenderer {
                         )
                     )
                 ];
+
+            case "void":
+                return [];
+                
             default:
                 return [];
         }

@@ -13,6 +13,10 @@ export interface CodeXaNull {
     kind: "null";
 }
 
+export interface CodeXaVoid {
+    kind: "void";
+}
+
 export interface CodeXaReference {
     kind: "reference";
     name: string;
@@ -62,6 +66,7 @@ export interface CodeXaPropertyType {
 export type CodeXaType =
     | CodeXaPrimitive
     | CodeXaNull
+    | CodeXaVoid
     | CodeXaReference
     | CodeXaArray
     | CodeXaObject

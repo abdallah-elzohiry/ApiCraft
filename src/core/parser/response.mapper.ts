@@ -14,12 +14,21 @@ export class ResponseMapper {
         responses: OpenAPIV3.ResponsesObject
     ): CodeXaResponse | undefined {
 
+        // =========================
+        // Find successful response
+        // =========================
+
         const successResponse =
             Object.entries(responses).find(
                 ([statusCode]) => {
-                    const status = Number(statusCode);
 
-                    return status >= 200 && status < 300;
+                    const status =
+                        Number(statusCode);
+
+                    return (
+                        status >= 200 &&
+                        status < 300
+                    );
                 }
             );
 
@@ -27,21 +36,52 @@ export class ResponseMapper {
             return undefined;
         }
 
-        const [statusCode, response] =
-            successResponse;
+        const [
+            statusCode,
+            response
+        ] = successResponse;
+
+        // =========================
+        // Reference Response
+        // =========================
 
         if ("$ref" in response) {
             return undefined;
         }
+
+        const numericStatusCode =
+            Number(statusCode);
+
+        // =========================
+        // No Content
+        // =========================
+
+        if (numericStatusCode === 204) {
+            return {
+                statusCode: numericStatusCode,
+
+                type: {
+                    kind: "void"
+                }
+            };
+        }
+
+        // =========================
+        // JSON Schema
+        // =========================
 
         const schema =
             response.content?.[
                 "application/json"
             ]?.schema;
 
+        // =========================
+        // No Schema
+        // =========================
+
         if (!schema) {
             return {
-                statusCode: Number(statusCode),
+                statusCode: numericStatusCode,
 
                 type: {
                     kind: "primitive",
@@ -50,12 +90,17 @@ export class ResponseMapper {
             };
         }
 
-        return {
-            statusCode: Number(statusCode),
+        // =========================
+        // Schema
+        // =========================
 
-            type: this.schemaTypeMapper.map(
-                schema
-            )
+        return {
+            statusCode: numericStatusCode,
+
+            type:
+                this.schemaTypeMapper.map(
+                    schema
+                )
         };
     }
 }

@@ -204,7 +204,9 @@ ${indentedMethods}
                 )
                 .map(
                     parameter =>
-                        `${parameter.name}${parameter.required ? "" : "?"
+                        `${parameter.name}${parameter.required
+                            ? ""
+                            : "?"
                         }: ${this.typeMapper.map(
                             parameter.type
                         )}`
@@ -224,7 +226,9 @@ ${indentedMethods}
                     parameter =>
                         `${this.toParameterName(
                             parameter.name
-                        )}${parameter.required ? "" : "?"
+                        )}${parameter.required
+                            ? ""
+                            : "?"
                         }: ${this.typeMapper.map(
                             parameter.type
                         )}`
@@ -258,12 +262,17 @@ ${indentedMethods}
         // Response
         // =========================
 
+        const isVoidResponse =
+            endpoint.response?.type.kind === "void";
+
         const returnType =
-            endpoint.response
-                ? this.typeMapper.map(
-                    endpoint.response.type
-                )
-                : "void";
+            isVoidResponse
+                ? "void"
+                : endpoint.response
+                    ? this.typeMapper.map(
+                        endpoint.response.type
+                    )
+                    : "void";
 
         // =========================
         // URL
@@ -286,10 +295,10 @@ ${indentedMethods}
         // =========================
 
         const query =
-            endpoint.parameters.filter(
+            endpoint.parameters.some(
                 parameter =>
                     parameter.location === "query"
-            ).length > 0
+            )
                 ? `query: {
 ${endpoint.parameters
                     .filter(
@@ -309,10 +318,10 @@ ${endpoint.parameters
         // =========================
 
         const headers =
-            endpoint.parameters.filter(
+            endpoint.parameters.some(
                 parameter =>
                     parameter.location === "header"
-            ).length > 0
+            )
                 ? `headers: {
 ${endpoint.parameters
                     .filter(
@@ -358,7 +367,25 @@ ${endpoint.parameters
         }
 
         // =========================
-        // Generated Method
+        // Void Response
+        // =========================
+
+        if (isVoidResponse) {
+
+            return `async ${methodName}(${this.indent(
+                requestParameter,
+                2
+            )}): Promise<void> {
+
+  await this.http.request<void>({
+    ${requestOptions.join(",\n    ")}
+  });
+
+}`;
+        }
+
+        // =========================
+        // Normal Response
         // =========================
 
         return `async ${methodName}(${this.indent(

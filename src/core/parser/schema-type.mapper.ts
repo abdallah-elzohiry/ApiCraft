@@ -32,11 +32,11 @@ export class SchemaTypeMapper {
         // oneOf
         // =========================
 
-        if (schema.oneOf) {
+        if (schema.oneOf?.length) {
             return {
                 kind: "oneOf",
                 types: schema.oneOf.map(
-                    (type) => this.map(type)
+                    type => this.map(type)
                 )
             };
         }
@@ -45,11 +45,11 @@ export class SchemaTypeMapper {
         // anyOf
         // =========================
 
-        if (schema.anyOf) {
+        if (schema.anyOf?.length) {
             return {
                 kind: "anyOf",
                 types: schema.anyOf.map(
-                    (type) => this.map(type)
+                    type => this.map(type)
                 )
             };
         }
@@ -58,11 +58,11 @@ export class SchemaTypeMapper {
         // allOf
         // =========================
 
-        if (schema.allOf) {
+        if (schema.allOf?.length) {
             return {
                 kind: "allOf",
                 types: schema.allOf.map(
-                    (type) => this.map(type)
+                    type => this.map(type)
                 )
             };
         }
@@ -71,7 +71,7 @@ export class SchemaTypeMapper {
         // enum
         // =========================
 
-        if (schema.enum) {
+        if (schema.enum?.length) {
             return {
                 kind: "enum",
                 values: schema.enum.filter(
@@ -89,18 +89,45 @@ export class SchemaTypeMapper {
         }
 
         // =========================
+        // Nullable
+        // =========================
+
+        if (schema.nullable) {
+
+            const baseType =
+                this.mapNonNullable(schema);
+
+            return {
+                kind: "anyOf",
+                types: [
+                    baseType,
+                    {
+                        kind: "null"
+                    }
+                ]
+            };
+        }
+
+        return this.mapNonNullable(schema);
+    }
+
+    private mapNonNullable(
+        schema: OpenAPIV3.SchemaObject
+    ): CodeXaType {
+
+        // =========================
         // Array
         // =========================
 
         if (schema.type === "array") {
+
             return {
                 kind: "array",
-                elementType: schema.items
-                    ? this.map(schema.items)
-                    : {
-                        kind: "primitive",
-                        name: "unknown"
-                    }
+
+                elementType:
+                    this.map(
+                        schema.items
+                    )
             };
         }
 
@@ -110,13 +137,49 @@ export class SchemaTypeMapper {
 
         if (schema.type === "object") {
 
+            const properties =
+                Object.entries(
+                    schema.properties ?? {}
+                ).map(
+                    ([name, propertySchema]) => ({
+                        name,
+
+                        type:
+                            this.map(
+                                propertySchema
+                            ),
+
+                        required:
+                            schema.required?.includes(
+                                name
+                            ) ?? false
+                    })
+                );
+
+            // =========================
             // Dictionary
+            // =========================
+
             if (
-                schema.additionalProperties &&
-                schema.additionalProperties !== true
+                schema.additionalProperties === true
             ) {
                 return {
                     kind: "dictionary",
+
+                    valueType: {
+                        kind: "primitive",
+                        name: "unknown"
+                    }
+                };
+            }
+
+            if (
+                schema.additionalProperties &&
+                typeof schema.additionalProperties === "object"
+            ) {
+                return {
+                    kind: "dictionary",
+
                     valueType:
                         this.map(
                             schema.additionalProperties
@@ -124,25 +187,13 @@ export class SchemaTypeMapper {
                 };
             }
 
-            // Regular object
+            // =========================
+            // Object
+            // =========================
+
             return {
                 kind: "object",
-                properties: Object.entries(
-                    schema.properties ?? {}
-                ).map(
-                    ([name, propertySchema]) => ({
-                        name,
-
-                        type: this.map(
-                            propertySchema
-                        ),
-
-                        required:
-                            schema.required?.includes(
-                                name
-                            ) ?? false
-                    })
-                )
+                properties
             };
         }
 
@@ -154,24 +205,28 @@ export class SchemaTypeMapper {
 
             case "integer":
             case "number":
+
                 return {
                     kind: "primitive",
                     name: "number"
                 };
 
             case "string":
+
                 return {
                     kind: "primitive",
                     name: "string"
                 };
 
             case "boolean":
+
                 return {
                     kind: "primitive",
                     name: "boolean"
                 };
 
             default:
+
                 return {
                     kind: "primitive",
                     name: "unknown"
@@ -182,8 +237,11 @@ export class SchemaTypeMapper {
     private extractReferenceName(
         reference: string
     ): string {
+
         return (
-            reference.split("/").pop() ??
+            reference
+                .split("/")
+                .pop() ??
             "unknown"
         );
     }
