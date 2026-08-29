@@ -343,4 +343,55 @@ describe("SchemaTypeMapper", () => {
 
     });
 
+    it(
+        "should map OpenAPI 3.1 const string",
+        () => {
+
+            const result =
+                mapper.map({
+                    type: "string",
+                    const: "active"
+                } as any);
+
+            expect(result).toEqual({
+                kind: "enum",
+                values: ["active"]
+            });
+        }
+    );
+
+    it(
+        "should map OpenAPI 3.1 const number",
+        () => {
+
+            const result =
+                mapper.map({
+                    type: "number",
+                    const: 1
+                } as any);
+
+            expect(result).toEqual({
+                kind: "enum",
+                values: [1]
+            });
+        }
+    );
+
+    it(
+        "should map OpenAPI 3.1 const boolean",
+        () => {
+
+            const result =
+                mapper.map({
+                    type: "boolean",
+                    const: true
+                } as any);
+
+            expect(result).toEqual({
+                kind: "enum",
+                values: [true]
+            });
+        }
+    );
+
 });

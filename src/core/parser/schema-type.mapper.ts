@@ -1,18 +1,27 @@
-import type { OpenAPIV3 } from "openapi-types";
+import type {
+    OpenAPIV3,
+    OpenAPIV3_1
+} from "openapi-types";
 
 import type { RefResolver } from "./ref-resolver.js";
 import type { CodeXaType } from "../models/codexa-type.js";
+
+type OpenApiSchema =
+    | OpenAPIV3.SchemaObject
+    | OpenAPIV3_1.SchemaObject;
+
+type OpenApiReference =
+    | OpenAPIV3.ReferenceObject
+    | OpenAPIV3_1.ReferenceObject;
 
 export class SchemaTypeMapper {
 
     constructor(
         private readonly refResolver: RefResolver
-    ) {}
+    ) { }
 
     map(
-        schema:
-            | OpenAPIV3.SchemaObject
-            | OpenAPIV3.ReferenceObject
+        schema: OpenApiSchema | OpenApiReference
     ): CodeXaType {
 
         // =========================
@@ -25,6 +34,48 @@ export class SchemaTypeMapper {
                 name: this.extractReferenceName(
                     schema.$ref
                 )
+            };
+        }
+
+        // =========================
+        // const - OpenAPI 3.1
+        // =========================
+
+        if (
+            "const" in schema &&
+            (
+                typeof schema.const === "string" ||
+                typeof schema.const === "number" ||
+                typeof schema.const === "boolean"
+            )
+        ) {
+            return {
+                kind: "enum",
+                values: [schema.const]
+            };
+        }
+
+        // =========================
+        // OpenAPI 3.1 type array
+        // =========================
+
+        if (Array.isArray(schema.type)) {
+
+            const types =
+                schema.type.map(type =>
+                    this.mapOpenApi31Type(
+                        type,
+                        schema
+                    )
+                );
+
+            if (types.length === 1) {
+                return types[0];
+            }
+
+            return {
+                kind: "anyOf",
+                types
             };
         }
 
@@ -89,10 +140,10 @@ export class SchemaTypeMapper {
         }
 
         // =========================
-        // Nullable
+        // Nullable - OpenAPI 3.0
         // =========================
 
-        if (schema.nullable) {
+        if (this.isNullableSchema(schema)) {
 
             const baseType =
                 this.mapNonNullable(schema);
@@ -111,8 +162,22 @@ export class SchemaTypeMapper {
         return this.mapNonNullable(schema);
     }
 
+    private mapOpenApi31Type(
+        type: string,
+        schema: OpenApiSchema
+    ): CodeXaType {
+
+        if (type === "null") {
+            return {
+                kind: "null"
+            };
+        }
+
+        return this.mapPrimitiveType(type);
+    }
+
     private mapNonNullable(
-        schema: OpenAPIV3.SchemaObject
+        schema: OpenApiSchema
     ): CodeXaType {
 
         // =========================
@@ -187,46 +252,57 @@ export class SchemaTypeMapper {
                 };
             }
 
-            // =========================
-            // Object
-            // =========================
-
             return {
                 kind: "object",
                 properties
             };
         }
 
-        // =========================
-        // Primitive
-        // =========================
+        if (
+            typeof schema.type === "string"
+        ) {
+            return this.mapPrimitiveType(
+                schema.type
+            );
+        }
 
-        switch (schema.type) {
+        return {
+            kind: "primitive",
+            name: "unknown"
+        };
+    }
+
+    private mapPrimitiveType(
+        type: string | undefined
+    ): CodeXaType {
+
+        switch (type) {
 
             case "integer":
             case "number":
-
                 return {
                     kind: "primitive",
                     name: "number"
                 };
 
             case "string":
-
                 return {
                     kind: "primitive",
                     name: "string"
                 };
 
             case "boolean":
-
                 return {
                     kind: "primitive",
                     name: "boolean"
                 };
 
-            default:
+            case "null":
+                return {
+                    kind: "null"
+                };
 
+            default:
                 return {
                     kind: "primitive",
                     name: "unknown"
@@ -243,6 +319,16 @@ export class SchemaTypeMapper {
                 .split("/")
                 .pop() ??
             "unknown"
+        );
+    }
+
+    private isNullableSchema(
+        schema: OpenApiSchema
+    ): schema is OpenApiSchema & { nullable: true } {
+
+        return (
+            "nullable" in schema &&
+            schema.nullable === true
         );
     }
 }

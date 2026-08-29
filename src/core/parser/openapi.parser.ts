@@ -1,6 +1,8 @@
 import SwaggerParser from "@apidevtools/swagger-parser";
-import type { OpenAPIV3 } from "openapi-types";
-
+import type {
+    OpenAPIV3,
+    OpenAPIV3_1
+} from "openapi-types";
 import type { CodeXaDocument } from "../models/codexa-document.js";
 import type {
     CodeXaEndpoint,
@@ -19,11 +21,14 @@ export class OpenApiParser {
     async parse(
         filePath: string
     ): Promise<CodeXaDocument> {
+        type CodeXaOpenApiDocument =
+            | OpenAPIV3.Document
+            | OpenAPIV3_1.Document;
 
         const document =
             await SwaggerParser.parse(
                 filePath
-            ) as OpenAPIV3.Document;
+            ) as CodeXaOpenApiDocument;
 
         // =========================
         // Resolvers & Mappers
