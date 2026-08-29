@@ -4,25 +4,40 @@ import path from "node:path";
 import type { CodeXaDocument } from "../../core/models/codexa-document.js";
 import type { CodeXaEndpoint } from "../../core/models/codexa-endpoint.js";
 
+import { TypeScriptTypeMapper } from "./typescript-type.mapper.js";
+
 export class TypeScriptClientGenerator {
+
+    private readonly typeMapper =
+        new TypeScriptTypeMapper();
+
     async generate(
         document: CodeXaDocument,
         outputDirectory: string
     ): Promise<void> {
-        const clientsDirectory = path.join(
-            outputDirectory,
-            "clients"
-        );
+
+        const clientsDirectory =
+            path.join(
+                outputDirectory,
+                "clients"
+            );
 
         await mkdir(clientsDirectory, {
             recursive: true
         });
 
         const groupedEndpoints =
-            this.groupByResource(document.endpoints);
+            this.groupByResource(
+                document.endpoints
+            );
 
-        for (const [resource, endpoints] of groupedEndpoints) {
-            const fileName = `${this.toFileName(resource)}.client.ts`;
+        for (
+            const [resource, endpoints]
+            of groupedEndpoints
+        ) {
+
+            const fileName =
+                `${this.toFileName(resource)}.client.ts`;
 
             const content =
                 this.generateClient(
@@ -31,7 +46,10 @@ export class TypeScriptClientGenerator {
                 );
 
             await writeFile(
-                path.join(clientsDirectory, fileName),
+                path.join(
+                    clientsDirectory,
+                    fileName
+                ),
                 content,
                 "utf8"
             );
@@ -42,14 +60,16 @@ export class TypeScriptClientGenerator {
         resource: string,
         endpoints: CodeXaEndpoint[]
     ): string {
+
         const className =
             `${this.toPascalCase(resource)}Client`;
 
-        const methods = endpoints
-            .map((endpoint) =>
-                this.generateMethod(endpoint)
-            )
-            .join("\n\n");
+        const methods =
+            endpoints
+                .map(endpoint =>
+                    this.generateMethod(endpoint)
+                )
+                .join("\n\n");
 
         const indentedMethods =
             this.indent(methods, 2);
@@ -59,12 +79,14 @@ export class TypeScriptClientGenerator {
 ${this.generateImports(endpoints)}
 
 export class ${className} {
+
   constructor(
     private readonly http: HttpClient,
     private readonly baseUrl: string
   ) {}
 
 ${indentedMethods}
+
 }
 `;
     }
@@ -72,46 +94,73 @@ ${indentedMethods}
     private generateImports(
         endpoints: CodeXaEndpoint[]
     ): string {
-        const imports = new Map<string, string>();
 
-        const primitiveTypes = new Set([
-            "string",
-            "number",
-            "boolean",
-            "unknown",
-            "void",
-            "Record<string, unknown>"
-        ]);
+        const imports =
+            new Map<string, string>();
 
         for (const endpoint of endpoints) {
-            // Request body
-            if (
-                endpoint.requestBody &&
-                !primitiveTypes.has(endpoint.requestBody.type)
-            ) {
-                const type = this.getBaseType(
-                    endpoint.requestBody.type
-                );
 
-                imports.set(
-                    type,
-                    `import type { ${type} } from "../models/${this.toFileName(type)}.js";`
-                );
+            // =========================
+            // Request Body
+            // =========================
+
+            if (endpoint.requestBody) {
+
+                const references =
+                    this.typeMapper.getReferencedTypes(
+                        endpoint.requestBody.type
+                    );
+
+                for (const reference of references) {
+
+                    imports.set(
+                        reference,
+                        `import type { ${reference} } from "../models/${this.toFileName(reference)}.js";`
+                    );
+                }
             }
 
+            // =========================
             // Response
-            if (
-                endpoint.response &&
-                !primitiveTypes.has(endpoint.response.type)
-            ) {
-                const type = this.getBaseType(
-                    endpoint.response.type
-                );
+            // =========================
 
-                imports.set(
-                    type,
-                    `import type { ${type} } from "../models/${this.toFileName(type)}.js";`
-                );
+            if (endpoint.response) {
+
+                const references =
+                    this.typeMapper.getReferencedTypes(
+                        endpoint.response.type
+                    );
+
+                for (const reference of references) {
+
+                    imports.set(
+                        reference,
+                        `import type { ${reference} } from "../models/${this.toFileName(reference)}.js";`
+                    );
+                }
+            }
+
+            // =========================
+            // Parameters
+            // =========================
+
+            for (
+                const parameter
+                of endpoint.parameters
+            ) {
+
+                const references =
+                    this.typeMapper.getReferencedTypes(
+                        parameter.type
+                    );
+
+                for (const reference of references) {
+
+                    imports.set(
+                        reference,
+                        `import type { ${reference} } from "../models/${this.toFileName(reference)}.js";`
+                    );
+                }
             }
         }
 
@@ -121,6 +170,7 @@ ${indentedMethods}
     private generateMethod(
         endpoint: CodeXaEndpoint
     ): string {
+
         const methodName =
             endpoint.operationId ??
             this.generateMethodName(endpoint);
@@ -132,12 +182,14 @@ ${indentedMethods}
         const pathParameters =
             endpoint.parameters
                 .filter(
-                    (parameter) =>
+                    parameter =>
                         parameter.location === "path"
                 )
                 .map(
-                    (parameter) =>
-                        `${parameter.name}: ${parameter.type}`
+                    parameter =>
+                        `${parameter.name}: ${this.typeMapper.map(
+                            parameter.type
+                        )}`
                 );
 
         // =========================
@@ -147,29 +199,37 @@ ${indentedMethods}
         const queryParameters =
             endpoint.parameters
                 .filter(
-                    (parameter) =>
+                    parameter =>
                         parameter.location === "query"
                 )
                 .map(
-                    (parameter) =>
+                    parameter =>
                         `${parameter.name}${parameter.required ? "" : "?"
-                        }: ${parameter.type}`
+                        }: ${this.typeMapper.map(
+                            parameter.type
+                        )}`
                 );
 
         // =========================
         // Header Parameters
         // =========================
+
         const headerParameters =
             endpoint.parameters
                 .filter(
-                    (parameter) =>
+                    parameter =>
                         parameter.location === "header"
                 )
                 .map(
-                    (parameter) =>
-                        `${this.toParameterName(parameter.name)}${parameter.required ? "" : "?"
-                        }: ${parameter.type}`
+                    parameter =>
+                        `${this.toParameterName(
+                            parameter.name
+                        )}${parameter.required ? "" : "?"
+                        }: ${this.typeMapper.map(
+                            parameter.type
+                        )}`
                 );
+
         // =========================
         // Method Parameters
         // =========================
@@ -189,7 +249,9 @@ ${indentedMethods}
                 ? `${parameters
                     ? `${parameters}, `
                     : ""
-                }request: ${endpoint.requestBody.type}`
+                }request: ${this.typeMapper.map(
+                    endpoint.requestBody.type
+                )}`
                 : parameters;
 
         // =========================
@@ -197,7 +259,11 @@ ${indentedMethods}
         // =========================
 
         const returnType =
-            endpoint.response?.type ?? "void";
+            endpoint.response
+                ? this.typeMapper.map(
+                    endpoint.response.type
+                )
+                : "void";
 
         // =========================
         // URL
@@ -212,7 +278,7 @@ ${indentedMethods}
 
         const body =
             endpoint.requestBody
-                ? `body: request`
+                ? "body: request"
                 : "";
 
         // =========================
@@ -221,38 +287,45 @@ ${indentedMethods}
 
         const query =
             endpoint.parameters.filter(
-                (parameter) =>
+                parameter =>
                     parameter.location === "query"
             ).length > 0
                 ? `query: {
 ${endpoint.parameters
                     .filter(
-                        (parameter) =>
+                        parameter =>
                             parameter.location === "query"
                     )
                     .map(
-                        (parameter) =>
+                        parameter =>
                             `      ${parameter.name}`
                     )
                     .join(",\n")}
     }`
                 : "";
 
+        // =========================
+        // Headers
+        // =========================
+
         const headers =
             endpoint.parameters.filter(
-                (parameter) =>
+                parameter =>
                     parameter.location === "header"
             ).length > 0
                 ? `headers: {
 ${endpoint.parameters
                     .filter(
-                        (parameter) =>
+                        parameter =>
                             parameter.location === "header"
                     )
                     .map(
-                        (parameter) => {
+                        parameter => {
+
                             const parameterName =
-                                this.toParameterName(parameter.name);
+                                this.toParameterName(
+                                    parameter.name
+                                );
 
                             return `      ...(${parameterName} !== undefined && {
         "${parameter.name}": ${parameterName}
@@ -262,11 +335,12 @@ ${endpoint.parameters
                     .join(",\n")}
     }`
                 : "";
+
         // =========================
         // HTTP Request Options
         // =========================
 
-        const requestOptions = [
+        const requestOptions: string[] = [
             `method: "${endpoint.method}"`,
             `url: \`${url}\``
         ];
@@ -274,6 +348,7 @@ ${endpoint.parameters
         if (query) {
             requestOptions.push(query);
         }
+
         if (headers) {
             requestOptions.push(headers);
         }
@@ -286,22 +361,36 @@ ${endpoint.parameters
         // Generated Method
         // =========================
 
-        return `async ${methodName}(${this.indent(requestParameter, 2)}): Promise<${returnType}> {
+        return `async ${methodName}(${this.indent(
+            requestParameter,
+            2
+        )}): Promise<${returnType}> {
+
   const response = await this.http.request<${returnType}>({
     ${requestOptions.join(",\n    ")}
   });
 
   return response.data;
+
 }`;
     }
 
     private generateUrl(
         endpoint: CodeXaEndpoint
     ): string {
-        let url = `${"${this.baseUrl}"}${endpoint.path}`;
 
-        for (const parameter of endpoint.parameters) {
-            if (parameter.location === "path") {
+        let url =
+            `${"${this.baseUrl}"}${endpoint.path}`;
+
+        for (
+            const parameter
+            of endpoint.parameters
+        ) {
+
+            if (
+                parameter.location === "path"
+            ) {
+
                 url = url.replace(
                     `{${parameter.name}}`,
                     `\${${parameter.name}}`
@@ -315,6 +404,7 @@ ${endpoint.parameters
     private generateMethodName(
         endpoint: CodeXaEndpoint
     ): string {
+
         const pathName =
             endpoint.path
                 .replace(/[{}]/g, "")
@@ -330,10 +420,12 @@ ${endpoint.parameters
     private groupByResource(
         endpoints: CodeXaEndpoint[]
     ): Map<string, CodeXaEndpoint[]> {
+
         const groups =
             new Map<string, CodeXaEndpoint[]>();
 
         for (const endpoint of endpoints) {
+
             const resource =
                 endpoint.path
                     .split("/")
@@ -345,7 +437,10 @@ ${endpoint.parameters
 
             existing.push(endpoint);
 
-            groups.set(resource, existing);
+            groups.set(
+                resource,
+                existing
+            );
         }
 
         return groups;
@@ -354,11 +449,12 @@ ${endpoint.parameters
     private toPascalCase(
         value: string
     ): string {
+
         return value
             .split(/[-_\s]+/)
             .filter(Boolean)
             .map(
-                (part) =>
+                part =>
                     part.charAt(0).toUpperCase() +
                     part.slice(1)
             )
@@ -368,6 +464,7 @@ ${endpoint.parameters
     private toFileName(
         value: string
     ): string {
+
         return value
             .replace(
                 /([a-z0-9])([A-Z])/g,
@@ -380,12 +477,13 @@ ${endpoint.parameters
         value: string,
         spaces: number
     ): string {
+
         const indentation =
             " ".repeat(spaces);
 
         return value
             .split("\n")
-            .map((line) =>
+            .map(line =>
                 line.trim()
                     ? indentation + line
                     : line
@@ -393,20 +491,22 @@ ${endpoint.parameters
             .join("\n");
     }
 
-    private getBaseType(
-        type: string
-    ): string {
-        return type.replace(/\[\]$/, "");
-    }
     private toParameterName(
         value: string
     ): string {
+
         return value
-            .replace(/[-_]+(.)?/g, (_, char) =>
-                char ? char.toUpperCase() : ""
+            .replace(
+                /[-_]+(.)?/g,
+                (_, char) =>
+                    char
+                        ? char.toUpperCase()
+                        : ""
             )
-            .replace(/^([A-Z])/, (_, char) =>
-                char.toLowerCase()
+            .replace(
+                /^([A-Z])/,
+                (_, char) =>
+                    char.toLowerCase()
             );
     }
 }

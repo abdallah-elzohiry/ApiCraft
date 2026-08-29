@@ -1,67 +1,38 @@
 import type { OpenAPIV3 } from "openapi-types";
 
 import type { CodeXaRequestBody } from "../models/codexa-endpoint.js";
+import { SchemaTypeMapper } from "./schema-type.mapper.js";
 
 export class RequestBodyMapper {
+
+    constructor(
+        private readonly schemaTypeMapper: SchemaTypeMapper
+    ) {}
+
     map(
-        requestBody: OpenAPIV3.RequestBodyObject | undefined
-    ): CodeXaRequestBody | undefined {
-        if (!requestBody) {
-            return undefined;
-        }
+        requestBody: OpenAPIV3.RequestBodyObject
+    ): CodeXaRequestBody {
 
         const schema =
-            requestBody.content?.["application/json"]?.schema;
+            requestBody.content?.[
+                "application/json"
+            ]?.schema;
 
         if (!schema) {
-            return undefined;
+            return {
+                type: {
+                    kind: "primitive",
+                    name: "unknown"
+                },
+                required:
+                    requestBody.required ?? false
+            };
         }
 
         return {
-            required: requestBody.required ?? false,
-            type: this.mapSchema(schema)
+            type: this.schemaTypeMapper.map(schema),
+            required:
+                requestBody.required ?? false
         };
-    }
-
-    private mapSchema(
-        schema:
-            | OpenAPIV3.ReferenceObject
-            | OpenAPIV3.SchemaObject
-    ): string {
-        if ("$ref" in schema) {
-            return this.extractReferenceName(schema.$ref);
-        }
-
-        if (schema.type === "array") {
-            if (!schema.items) {
-                return "unknown[]";
-            }
-
-            return `${this.mapSchema(schema.items)}[]`;
-        }
-
-        switch (schema.type) {
-            case "integer":
-            case "number":
-                return "number";
-
-            case "string":
-                return "string";
-
-            case "boolean":
-                return "boolean";
-
-            case "object":
-                return "Record<string, unknown>";
-
-            default:
-                return "unknown";
-        }
-    }
-
-    private extractReferenceName(
-        reference: string
-    ): string {
-        return reference.split("/").pop() ?? "unknown";
     }
 }
