@@ -1,1 +1,0 @@
-{"version":3,"file":"http-client-options.d.ts","sourceRoot":"","sources":["../../../src/core/http/http-client-options.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,iBAAiB;IAC9B,OAAO,EAAE,MAAM,CAAC;IAEhB,OAAO,CAAC,EAAE,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;CACpC"}
