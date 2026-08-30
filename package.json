@@ -14,7 +14,7 @@
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublish": "npm test && npm run build"
   },
   "keywords": [
     "openapi",
@@ -38,6 +38,6 @@
   "dependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",
     "commander": "^15.0.0",
-    "openapi-types": "^12.1.3"
+    "openapi-types": "^12.1.3" 
   }
 }
