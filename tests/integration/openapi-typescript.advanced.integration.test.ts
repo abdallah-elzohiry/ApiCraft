@@ -411,4 +411,322 @@ describe("Advanced OpenAPI → TypeScript", () => {
             );
 
     });
+    it("should support comprehensive OpenAPI 3.1 features", async () => {
+
+        const parser =
+            new OpenApiParser();
+
+        const fixturePath =
+            path.resolve(
+                "tests/fixtures/openapi-3.1-comprehensive.openapi.json"
+            );
+
+        // console.log("FIXTURE PATH:", fixturePath);
+
+        // const raw =
+        //     await readFile(
+        //         fixturePath,
+        //         "utf8"
+        //     );
+
+        // console.log(
+        //     "OPENAPI VERSION:",
+        //     JSON.parse(raw).openapi
+        // );
+
+        const document =
+            await parser.parse(fixturePath);
+
+        // =========================
+        // Document
+        // =========================
+
+        expect(document.title)
+            .toBe("Comprehensive OpenAPI 3.1 API");
+
+        expect(document.version)
+            .toBe("1.0.0");
+
+        // =========================
+        // Models
+        // =========================
+
+        expect(document.models)
+            .toHaveLength(5);
+
+        const modelNames =
+            document.models.map(
+                model => model.name
+            );
+        
+        expect(modelNames)
+            .toContain("ProductDto");
+
+        expect(modelNames)
+            .toContain("CreateProductRequest");
+
+        expect(modelNames)
+            .toContain("PhysicalCategory");
+
+        expect(modelNames)
+            .toContain("DigitalCategory");
+
+        // =========================
+        // Endpoints
+        // =========================
+
+        expect(document.endpoints)
+            .toHaveLength(3);
+
+        // =========================
+        // GET Product
+        // =========================
+
+        const getProduct =
+            document.endpoints.find(
+                endpoint =>
+                    endpoint.operationId === "getProduct"
+            );
+
+        expect(getProduct)
+            .toBeDefined();
+
+        expect(getProduct?.method)
+            .toBe("GET");
+
+        expect(getProduct?.path)
+            .toBe("/products/{id}");
+
+        // =========================
+        // Path Parameter
+        // =========================
+
+        const idParameter =
+            getProduct?.parameters.find(
+                parameter =>
+                    parameter.name === "id"
+            );
+
+        expect(idParameter)
+            .toBeDefined();
+
+        expect(idParameter?.location)
+            .toBe("path");
+
+        expect(idParameter?.required)
+            .toBe(true);
+
+        // =========================
+        // Query Parameter
+        // =========================
+
+        const includeDetails =
+            getProduct?.parameters.find(
+                parameter =>
+                    parameter.name === "includeDetails"
+            );
+
+        expect(includeDetails)
+            .toBeDefined();
+
+        expect(includeDetails?.location)
+            .toBe("query");
+
+        expect(includeDetails?.required)
+            .toBe(false);
+
+        // =========================
+        // Response
+        // =========================
+
+        expect(getProduct?.response)
+            .toBeDefined();
+
+        expect(getProduct?.response?.statusCode)
+            .toBe(200);
+
+        // =========================
+        // POST Product
+        // =========================
+
+        const createProduct =
+            document.endpoints.find(
+                endpoint =>
+                    endpoint.operationId === "createProduct"
+            );
+
+        expect(createProduct)
+            .toBeDefined();
+
+        expect(createProduct?.method)
+            .toBe("POST");
+
+        expect(createProduct?.requestBody)
+            .toBeDefined();
+
+        // =========================
+        // DELETE Product
+        // =========================
+
+        const deleteProduct =
+            document.endpoints.find(
+                endpoint =>
+                    endpoint.operationId === "deleteProduct"
+            );
+
+        expect(deleteProduct)
+            .toBeDefined();
+
+        expect(deleteProduct?.method)
+            .toBe("DELETE");
+
+        expect(deleteProduct?.response)
+            .toBeDefined();
+
+        expect(deleteProduct?.response?.statusCode)
+            .toBe(204);
+
+        expect(deleteProduct?.response?.type)
+            .toEqual({
+                kind: "void"
+            });
+
+        // =========================
+        // Generate
+        // =========================
+
+        outputDirectory =
+            await mkdtemp(
+                path.join(
+                    os.tmpdir(),
+                    "codexa-openapi-31-comprehensive-"
+                )
+            );
+
+        const generator =
+            new TypeScriptGenerator();
+
+        await generator.generate(
+            document,
+            outputDirectory
+        );
+
+        // =========================
+        // ProductDto
+        // =========================
+
+        const productDto =
+            await readFile(
+                path.join(
+                    outputDirectory,
+                    "models",
+                    "product-dto.ts"
+                ),
+                "utf8"
+            );
+
+        expect(productDto)
+            .toContain(
+                "id: number;"
+            );
+
+        expect(productDto)
+            .toContain(
+                "name: string;"
+            );
+
+        expect(productDto)
+            .toContain(
+                "status?:"
+            );
+
+        expect(productDto)
+            .toContain(
+                "category?:"
+            );
+
+        expect(productDto)
+            .toContain(
+                "metadata?:"
+            );
+
+        expect(productDto)
+            .toContain(
+                "tags?: string[];"
+            );
+
+        expect(productDto)
+            .toContain(
+                "description?:"
+            );
+
+        // =========================
+        // CreateProductRequest
+        // =========================
+
+        const createProductRequest =
+            await readFile(
+                path.join(
+                    outputDirectory,
+                    "models",
+                    "create-product-request.ts"
+                ),
+                "utf8"
+            );
+
+        expect(createProductRequest)
+            .toContain(
+                "name: string;"
+            );
+
+        expect(createProductRequest)
+            .toContain(
+                "price?: number;"
+            );
+
+        // =========================
+        // Client
+        // =========================
+
+        const productsClient =
+            await readFile(
+                path.join(
+                    outputDirectory,
+                    "clients",
+                    "products.client.ts"
+                ),
+                "utf8"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "export class ProductsClient"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "getProduct"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "createProduct"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "deleteProduct"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "Promise<ProductDto>"
+            );
+
+        expect(productsClient)
+            .toContain(
+                "Promise<void>"
+            );
+
+    });
 });

@@ -6,11 +6,15 @@
   "bin": {
     "codexa": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
     "openapi",
@@ -22,6 +26,9 @@
   ],
   "author": "CodeXA",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/node": "^26.4.0",
     "tsx": "^4.23.12",

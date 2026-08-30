@@ -1,0 +1,204 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Comprehensive OpenAPI 3.1 API",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/products/{id}": {
+            "get": {
+                "operationId": "getProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "includeDetails",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductDto"
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "deleteProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/products": {
+            "post": {
+                "operationId": "createProduct",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateProductRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ProductDto": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ]
+                    },
+                    "category": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PhysicalCategory"
+                            },
+                            {
+                                "$ref": "#/components/schemas/DigitalCategory"
+                            }
+                        ]
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            },
+            "CreateProductRequest": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": "number"
+                    }
+                }
+            },
+            "PhysicalCategory": {
+                "type": "object",
+                "properties": {
+                    "weight": {
+                        "type": "number"
+                    }
+                }
+            },
+            "DigitalCategory": {
+                "type": "object",
+                "properties": {
+                    "downloadUrl": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ConfigurableProduct": {
+                "type": "object",
+                "properties": {
+                    "configuration": {
+                        "$ref": "#/$defs/ProductConfiguration"
+                    }
+                },
+                "$defs": {
+                    "ProductConfiguration": {
+                        "type": "object",
+                        "required": [
+                            "enabled"
+                        ],
+                        "properties": {
+                            "enabled": {
+                                "type": "boolean"
+                            },
+                            "mode": {
+                                "type": "string",
+                                "const": "automatic"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
