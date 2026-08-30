@@ -1,10 +1,10 @@
 {
-  "name": "codexa",
+  "name": "apicraft",
   "version": "0.1.0",
   "description": "Code generation toolkit for OpenAPI-based APIs",
   "type": "module",
   "bin": {
-    "codexa": "./dist/cli.js"
+    "apicraft": "./dist/cli.js"
   },
   "files": [
     "dist"
