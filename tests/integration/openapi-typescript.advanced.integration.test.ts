@@ -313,5 +313,102 @@ describe("Advanced OpenAPI → TypeScript", () => {
             );
 
     });
+    it("should support OpenAPI 3.1 $defs", async () => {
 
+        const parser =
+            new OpenApiParser();
+
+        const fixturePath =
+            path.resolve(
+                "tests/fixtures/openapi-3.1-defs.openapi.json"
+            );
+
+        const document =
+            await parser.parse(fixturePath);
+
+        // =========================
+        // Document
+        // =========================
+
+        expect(document.title)
+            .toBe("OpenAPI 3.1 $defs API");
+
+        // =========================
+        // Models
+        // =========================
+
+        expect(document.models)
+            .toHaveLength(1);
+
+        const userModel =
+            document.models.find(
+                model => model.name === "UserDto"
+            );
+
+        expect(userModel)
+            .toBeDefined();
+
+        // =========================
+        // Endpoint
+        // =========================
+
+        expect(document.endpoints)
+            .toHaveLength(1);
+
+        const endpoint =
+            document.endpoints[0];
+
+        expect(endpoint.operationId)
+            .toBe("getUser");
+
+        // =========================
+        // Generate
+        // =========================
+
+        outputDirectory =
+            await mkdtemp(
+                path.join(
+                    os.tmpdir(),
+                    "codexa-openapi-31-"
+                )
+            );
+
+        const generator =
+            new TypeScriptGenerator();
+
+        await generator.generate(
+            document,
+            outputDirectory
+        );
+
+        // =========================
+        // UserDto
+        // =========================
+
+        const userDto =
+            await readFile(
+                path.join(
+                    outputDirectory,
+                    "models",
+                    "user-dto.ts"
+                ),
+                "utf8"
+            );
+
+        expect(userDto)
+            .toContain(
+                "id: number;"
+            );
+
+        expect(userDto)
+            .toContain(
+                "name: string;"
+            );
+
+        expect(userDto)
+            .toContain(
+                "address?: Address;"
+            );
+
+    });
 });

@@ -393,5 +393,43 @@ describe("SchemaTypeMapper", () => {
             });
         }
     );
+    it(
+        "should map OpenAPI 3.1 $defs reference",
+        () => {
 
+            const result =
+                mapper.map({
+                    $ref: "#/$defs/Address"
+                } as any);
+
+            expect(result).toEqual({
+                kind: "reference",
+                name: "Address"
+            });
+        }
+    );
+
+    it("should map OpenAPI 3.1 type array", () => {
+
+        const result =
+            mapper.map({
+                type: [
+                    "string",
+                    "null"
+                ]
+            } as any);
+
+        expect(result).toEqual({
+            kind: "anyOf",
+            types: [
+                {
+                    kind: "primitive",
+                    name: "string"
+                },
+                {
+                    kind: "null"
+                }
+            ]
+        });
+    });
 });
